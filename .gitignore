@@ -1,0 +1,77 @@
+# 编译后的可执行文件和库
+# 忽略项目自身编译后的二进制文件（通常与项目名相同）
+# 或者任何自定义的编译输出
+*.exe
+*.dll
+*.so
+*.dylib
+*.o
+*.a
+*.test
+*.prof
+dist/
+
+# Go Modules 依赖缓存（Go 1.11+）
+# Go 会将依赖缓存到 GOMODCACHE（通常在 GOPATH/pkg/mod），
+# 但有时可能存在本地缓存（如 go build -mod=vendor 时）
+# 忽略 vendor 目录，除非你明确选择提交它（但通常不推荐）
+/vendor/
+#/pkg/
+
+# 测试相关的缓存文件
+# 忽略测试生成的缓存目录
+/_test/
+
+# 编译缓存目录
+# 忽略 Go 1.10+ 引入的构建缓存
+/go.work.sum
+/go.work
+/go.sum # 除非你明确选择不提交 go.sum，但通常建议提交 go.mod 和 go.sum
+
+# 操作系统和编辑器生成的文件
+# 忽略 macOS 资源文件
+.DS_Store
+
+# 忽略 Linux 临时文件
+*~
+
+# 忽略 Windows 缩略图缓存
+Thumbs.db
+
+# 忽略常见的 IDE 和编辑器生成的文件/目录
+# JetBrains 系列 IDEs (GoLand, IntelliJ IDEA)
+.idea/
+*.iml
+*.iws
+
+# Visual Studio Code
+.vscode/
+
+# Vim/NeoVim
+*.swp
+*.swo
+.vim/
+
+# Emacs
+#*#
+/.#*
+
+# 数据库文件 (如果项目使用本地 SQLite 或其他临时文件)
+*.db
+*.sqlite
+
+# 敏感信息或日志文件
+# 避免提交配置文件、日志、或环境变量
+*.log
+*.env
+.env.local
+.env.development
+.env.production
+config.yaml.bak
+secrets/
+
+# Docker/K8s 相关 (如果使用)
+# 忽略编译后的 Docker 镜像上下文内容，通常在 .dockerignore 中处理，
+# 但有时也会放在 .gitignore
+target/
+build/
