@@ -1,4 +1,4 @@
-module github.com/rocwg/goro-http-adapter
+module github.com/rocwg/goro-edge/adapter
 
 go 1.26.4
 
@@ -45,4 +45,4 @@ require github.com/rocwg/grpc-contracts v0.0.0-00010101000000-000000000000
 
 // 本地开发时启用，提交代码前注释掉或删除
 // 本地联动指向：直接指向根目录级别
-replace github.com/rocwg/grpc-contracts => ../grpc-contracts
+replace github.com/rocwg/grpc-contracts => ../../grpc-contracts
