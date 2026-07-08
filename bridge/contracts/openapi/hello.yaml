@@ -1,0 +1,45 @@
+openapi: 3.1.0
+
+info:
+  title: Hello API
+  version: 1.0.0
+  description: Consumer Contract for Hello Service.
+
+servers:
+  - url: http://localhost:8080
+
+paths:
+  /api/v1/hello/say:
+    post:
+      summary: Say hello
+      operationId: sayHello
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HelloRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+
+components:
+  schemas:
+    HelloRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: rocwg
+    HelloResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Hello ==> rocwg

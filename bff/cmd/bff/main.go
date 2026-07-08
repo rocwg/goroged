@@ -40,7 +40,7 @@ func main() {
 	log.Println("🚀 [goro-http-adapter] 成功架起跨语言 gRPC 客户端连接连接矩阵！")
 
 	// 3. 编写协议转换与数据聚合路由 (Adapter + BFF 职责)
-	r.GET("/api/v1/adapter/test", func(c *gin.Context) {
+	r.GET("/api/v1/bff/test", func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 
@@ -77,7 +77,7 @@ func main() {
 	})
 
 	// 4. 适配器启动在 HTTP 8080 端口，默默为 KrakenD 提供无杂质的 L7 弹药
-	if err := r.Run(":8080"); err != nil {
+	if err := r.Run(":8081"); err != nil {
 		log.Fatalf("❌ 适配器启动失败: %v", err)
 	}
 }
