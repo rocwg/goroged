@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rocwg/goro-edge/bridge/internal/adapter/dictarea"
 
 	bridgegrpc "github.com/rocwg/goro-edge/bridge/internal/grpc"
 
-	dictv1 "github.com/rocwg/grpc-contracts/gen/go/dictarea/v1"
 	hellov1 "github.com/rocwg/grpc-contracts/gen/go/hello/v1"
 )
 
@@ -30,22 +30,12 @@ func main() {
 	// 纯机械的 1:1 协议映射
 	// ==========================================
 
-	r.GET("/api/v1/dictarea/get-by-parent", func(c *gin.Context) {
-		parentCode := c.DefaultQuery("parent_code", "0")
+	api := r.Group("/api/v1")
 
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel()
-
-		resp, err := clients.DictArea.GetAreaByParent(ctx, &dictv1.GetAreaByParentRequest{
-			ParentCode: parentCode,
-		})
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		// 无脑透传返回
-		c.JSON(http.StatusOK, resp)
-	})
+	dictarea.Register(
+		api.Group("/dictarea"),
+		clients,
+	)
 
 	r.POST("/api/v1/hello/say", func(c *gin.Context) {
 		var req struct {
