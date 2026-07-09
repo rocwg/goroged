@@ -3,7 +3,6 @@ package hello
 import (
 	"context"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -27,7 +26,7 @@ func (a *Adapter) SayHello(c *gin.Context) {
 
 	ctx, cancel := context.WithTimeout(
 		c.Request.Context(),
-		2*time.Second,
+		a.unaryTimeout,
 	)
 	defer cancel()
 

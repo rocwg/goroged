@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -36,7 +35,7 @@ func (a *Adapter) StreamHello(c *gin.Context) {
 
 	ctx, cancel := context.WithTimeout(
 		c.Request.Context(),
-		30*time.Second,
+		a.streamTimeout,
 	)
 	defer cancel()
 
