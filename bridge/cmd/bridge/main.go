@@ -1,17 +1,13 @@
 package main
 
 import (
-	"context"
 	"log"
-	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rocwg/goro-edge/bridge/internal/adapter/dictarea"
+	"github.com/rocwg/goro-edge/bridge/internal/adapter/hello"
 
 	bridgegrpc "github.com/rocwg/goro-edge/bridge/internal/grpc"
-
-	hellov1 "github.com/rocwg/grpc-contracts/gen/go/hello/v1"
 )
 
 func main() {
@@ -26,39 +22,12 @@ func main() {
 
 	log.Println("🚀 [goro-bridge] 纯净协议转换矩阵已就位，严禁写入聚合逻辑！")
 
-	// ==========================================
-	// 纯机械的 1:1 协议映射
-	// ==========================================
-
+	//
 	api := r.Group("/api/v1")
 
-	dictarea.Register(
-		api.Group("/dictarea"),
-		clients,
-	)
-
-	r.POST("/api/v1/hello/say", func(c *gin.Context) {
-		var req struct {
-			Name string `json:"name"`
-		}
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "参数格式错误"})
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel()
-
-		resp, err := clients.Hello.SayHello(ctx, &hellov1.SayHelloRequest{
-			Name: req.Name,
-		})
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		// 无脑透传返回
-		c.JSON(http.StatusOK, resp)
-	})
+	//
+	dictarea.Register(api.Group("/dictarea"), clients)
+	hello.Register(api.Group("/hello"), clients)
 
 	// 运行
 	if err := r.Run(":8080"); err != nil {

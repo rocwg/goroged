@@ -2,12 +2,21 @@ package hello
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/rocwg/goro-edge/bridge/internal/grpc"
+
+	bridgegrpc "github.com/rocwg/goro-edge/bridge/internal/grpc"
 )
 
-func Register(
-	r *gin.RouterGroup,
-	clients *grpc.Clients,
-) {
+func Register(r *gin.RouterGroup, clients *bridgegrpc.Clients) {
 
+	adapter := NewAdapter(clients)
+
+	r.GET(
+		"/unary",
+		adapter.SayHello,
+	)
+
+	r.GET(
+		"/stream",
+		adapter.StreamHello,
+	)
 }
