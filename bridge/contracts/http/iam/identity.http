@@ -1,0 +1,49 @@
+########################################################
+# IAM · Identity（身份认证）
+#
+# Domain
+# - 身份认证（Authentication）
+# - 会话管理（Session）
+# - Token 生命周期管理
+#
+# Consumer Contract
+# 面向 Browser / App / BFF。
+# Bridge 负责映射到 IdentityService。
+########################################################
+
+@host=http://localhost:8080
+
+########################################################
+# Action（动作）
+########################################################
+
+###
+# 登录
+POST {{host}}/api/v1/iam/identity/login
+Content-Type: application/json
+
+{
+  "phone": "",
+  "password": ""
+}
+
+###
+# 登出
+POST {{host}}/api/v1/iam/identity/logout
+
+###
+# 刷新访问令牌
+POST {{host}}/api/v1/iam/identity/token/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": ""
+}
+
+########################################################
+# Query（查询）
+########################################################
+
+###
+# 当前登录用户
+GET {{host}}/api/v1/iam/identity/me

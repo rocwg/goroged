@@ -1,0 +1,131 @@
+########################################################
+# IAM · Department（部门）
+########################################################
+
+@host=http://localhost:8080
+
+########################################################
+# Query（查询）
+########################################################
+
+###
+# 角色分页查询
+POST {{host}}/api/v1/iam/departments/query
+Content-Type: application/json
+
+{
+  "page": 1,
+  "size": 20,
+  "name": "技术部",
+  "status": true
+}
+
+###
+# 部门:下拉选择
+POST {{host}}/api/v1/iam/departments/dropdown-select
+Content-Type: application/json
+
+{
+  "name": "技术部",
+  "status": true
+}
+
+###
+# 查询单位(编码)
+GET {{host}}/api/v1/iam/departments/by-code?
+    code=zz-01
+
+########################################################
+# Command（变更）
+########################################################
+
+###
+# 部门:新增
+POST {{host}}/api/v1/iam/departments
+Content-Type: application/json
+
+{
+  "name": "技术部",
+  "remark": "技术部门"
+}
+
+###
+# 部门:编辑
+PUT {{host}}/api/v1/iam/departments/3
+Content-Type: application/json
+
+{
+  "name": "技术部",
+  "remark": "技术部门"
+}
+
+###
+# 部门:删除
+DELETE {{host}}/api/v1/iam/departments
+Content-Type: application/json
+
+{
+  "departmentIds": [
+    3,
+    4
+  ]
+}
+
+########################################################
+# Relationship（关系）
+# 第二种：Relationship Increment（增量维护）
+########################################################
+
+#################
+# Query
+#################
+
+###
+# 部门:用户（查询已关联对象）
+POST {{host}}/api/v1/iam/departments/5/users/query
+Content-Type: application/json
+
+{
+  "page": 1,
+  "size": 20,
+  "username": ""
+}
+
+###
+# 部门:用户（查询可关联对象）
+POST {{host}}/api/v1/iam/departments/5/candidate-users/query
+Content-Type: application/json
+
+{
+  "page": 1,
+  "size": 20,
+  "username": ""
+}
+
+#################
+# Command
+#################
+
+###
+# 部门:用户（新增关联）
+POST {{host}}/api/v1/iam/departments/5/users/add
+Content-Type: application/json
+
+{
+  "userIds": [
+    3,
+    4
+  ]
+}
+
+###
+# 部门:用户（移除关联）
+POST {{host}}/api/v1/iam/departments/5/users/remove
+Content-Type: application/json
+
+{
+  "userIds": [
+    3,
+    4
+  ]
+}

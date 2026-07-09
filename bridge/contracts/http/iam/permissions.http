@@ -1,0 +1,44 @@
+########################################################
+# IAM
+########################################################
+
+@host=http://localhost:8080
+
+########################################################
+# Permission APIs.
+########################################################
+
+###
+### UI页面：按钮集
+GET {{host}}/api/v1/iam/permissions/menu-btn
+
+###
+### UI页面：新增按钮
+POST {{host}}/api/v1/iam/permissions/create-btn
+Content-Type: application/json
+
+{
+  "menuId": 1,
+  "code": "sys:menu:create",
+  "name": "菜单新增"
+}
+
+###
+### UI页面：修改按钮
+POST {{host}}/api/v1/iam/permissions/update-btn
+Content-Type: application/json
+
+{
+  "id": 1,
+  "code": "sys:menu:create",
+  "name": "新增菜单"
+}
+
+###
+### UI页面：删除按钮
+POST {{host}}/api/v1/iam/permissions/delete-btn
+Content-Type: application/json
+
+{
+  "id": 1
+}

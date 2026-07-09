@@ -36,7 +36,7 @@ Bridge 的价值，不是少写几百行代码，而是**明确、可审计地�
 
 所以，**Register 不仅是注册器，它实际上就是整个 Bridge 的"API 发布清单（Publish List）"**。我认为，这比任何自动生成方案都更符合你正在建设的长期工程体系。
 
-
+---
 
 ##### 2）Bridge 当前三个建议
 
@@ -47,4 +47,22 @@ Bridge 的价值，不是少写几百行代码，而是**明确、可审计地�
 3. **构造函数统一命名为 `New`**，例如 `dictarea.New(clients)`、`hello.New(clients)`、`iam.New(clients)`，既符合 Go 的习惯，也让代码更简洁。
 
 ---
+
+##### 3）Bridge 的职责
+
+Bridge 是协议转换层（Protocol Adapter），负责将 HTTP 请求转换为 gRPC 调用，并将 gRPC 响应转换回 HTTP 响应。它**不负责业务聚合，也不负责业务决策**。
+
+目前我们已经验证了两种能力：
+
+- Unary gRPC → HTTP JSON
+- Server Streaming gRPC → HTTP SSE
+
+后续还可以继续扩展：
+
+- Client Streaming → HTTP 上传
+- Bidirectional Streaming → WebSocket
+
+这样的表达方式，更像一本架构手册，也更方便以后整理成 `architecture/specification`。
+
+------
 

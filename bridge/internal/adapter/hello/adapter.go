@@ -21,7 +21,7 @@ type Adapter struct {
 	streamTimeout time.Duration
 }
 
-func New(clients *bridgegrpc.Clients) *Adapter {
+func NewAdapter(clients *bridgegrpc.Clients) *Adapter {
 	return &Adapter{
 		clients: clients,
 
