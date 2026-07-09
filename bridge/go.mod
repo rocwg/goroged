@@ -1,4 +1,4 @@
-module github.com/rocwg/goro-edge/adapter
+module github.com/rocwg/goro-edge/bridge
 
 go 1.26.4
 
