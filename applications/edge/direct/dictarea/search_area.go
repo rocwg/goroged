@@ -22,7 +22,7 @@ func (a *Adapter) SearchArea(c *gin.Context) {
 	}
 
 	ctx, cancel := context.WithTimeout(
-		a.grpcContext(c.Request.Context()),
+		c.Request.Context(),
 		2*time.Second,
 	)
 	defer cancel()

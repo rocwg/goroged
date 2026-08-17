@@ -28,7 +28,7 @@ func (a *Adapter) GetAreaByParent(c *gin.Context) {
 
 	// 2. context.WithTimeout()
 	ctx, cancel := context.WithTimeout(
-		a.grpcContext(c.Request.Context()),
+		c.Request.Context(),
 		2*time.Second,
 	)
 	defer cancel()
