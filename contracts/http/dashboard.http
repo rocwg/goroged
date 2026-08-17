@@ -1,0 +1,5 @@
+###
+GET {{host}}/api/v1/dashboard/overview
+X-Request-ID: req-demo-001
+X-Trace-ID: trace-demo-001
+Authorization: Bearer demo-token

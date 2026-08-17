@@ -1,0 +1,156 @@
+########################################################
+# IAM · User（用户）
+#
+# Domain
+# - 用户生命周期管理
+# - 用户基础信息管理
+# - 用户状态管理
+# - 用户凭据管理
+# - 用户角色关系维护
+# - 用户部门关系维护
+#
+# Consumer Contract
+# 面向 Browser / App / BFF。
+# Bridge 负责映射到 UserService。
+########################################################
+
+########################################################
+# Query（查询）
+########################################################
+
+###
+# 用户分页查询
+POST {{host}}/api/v1/iam/users/query
+Content-Type: application/json
+
+{
+  "page": 1,
+  "size": 20,
+  "username": "",
+  "status": false,
+  "roleId": 0,
+  "departmentId": 0,
+  "positionName": ""
+}
+
+###
+# 用户详情
+GET {{host}}/api/v1/iam/users/1001
+
+########################################################
+# Command（变更）
+########################################################
+
+###
+# 创建用户
+POST {{host}}/api/v1/iam/users
+Content-Type: application/json
+
+{
+  "phone": "",
+  "username": "",
+  "gender": "",
+  "remark": ""
+}
+
+###
+# 修改用户
+PUT {{host}}/api/v1/iam/users/1001
+Content-Type: application/json
+
+{
+  "phone": "",
+  "username": "",
+  "gender": "",
+  "remark": ""
+}
+
+###
+# 删除用户（单个）
+DELETE {{host}}/api/v1/iam/users/1001
+
+###
+# 批量删除用户
+DELETE {{host}}/api/v1/iam/users
+Content-Type: application/json
+
+{
+  "userIds": [
+    1001,
+    1002
+  ]
+}
+
+########################################################
+# Status（状态）
+#
+# User Sub Resource
+########################################################
+
+###
+# 修改用户状态
+PUT {{host}}/api/v1/iam/users/1001/status
+Content-Type: application/json
+
+{
+  "status": "ACTIVE"
+}
+
+########################################################
+# Credential（凭据）
+#
+# User Sub Resource
+########################################################
+
+###
+# 重置用户密码
+PUT {{host}}/api/v1/iam/users/1001/password
+Content-Type: application/json
+
+{
+  "password": ""
+}
+
+########################################################
+# Relationship（关系）
+#
+# Replace（整体维护）
+########################################################
+
+###
+# 分配角色
+PUT {{host}}/api/v1/iam/users/1001/roles
+Content-Type: application/json
+
+{
+  "roleIds": [
+    1,
+    2
+  ]
+}
+
+###
+# 设置所属部门
+PUT {{host}}/api/v1/iam/users/1001/department
+Content-Type: application/json
+
+{
+  "departmentId": 10
+}
+
+########################################################
+# Lookup（选择）
+#
+# 面向业务页面的选择器，不绑定具体 UI 组件。
+########################################################
+
+###
+# 用户选项查询
+POST {{host}}/api/v1/iam/users/options/query
+Content-Type: application/json
+
+{
+  "username": "",
+  "status": true,
+  "limit": 20
+}

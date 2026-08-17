@@ -1,0 +1,7 @@
+###
+POST {{host}}/api/v1/hello/say
+Content-Type: application/json
+
+{
+  "name": "rocwg"
+}
