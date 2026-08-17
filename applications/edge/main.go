@@ -8,9 +8,27 @@ import (
 
 func main() {
 
-	cfg := edgeconfig.Load()
+	// ---------------------------------------------------------
+	// 1. Load Configuration
+	// ---------------------------------------------------------
+
+	cfg, err := edgeconfig.Load(
+		"applications/edge/config/config.json",
+	)
+
+	if err != nil {
+		log.Fatalf(
+			"❌ 加载 Edge 配置失败: %v",
+			err,
+		)
+	}
+
+	// ---------------------------------------------------------
+	// 2. Create Application
+	// ---------------------------------------------------------
 
 	app, err := NewApplication(cfg)
+
 	if err != nil {
 		log.Fatalf(
 			"❌ 创建 Edge Application 失败: %v",
@@ -19,6 +37,10 @@ func main() {
 	}
 
 	defer app.Close()
+
+	// ---------------------------------------------------------
+	// 3. Run
+	// ---------------------------------------------------------
 
 	if err := app.Run(); err != nil {
 		log.Fatalf(

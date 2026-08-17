@@ -1,60 +1,72 @@
 package config
 
-import "os"
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+)
 
-// Config 是 goro-edge 的运行时配置。
 type Config struct {
-	HTTP     HTTPConfig
-	Provider ProviderConfig
+	HTTP      HTTPConfig                `json:"http"`
+	Providers map[string]ProviderConfig `json:"providers"`
 }
 
-// HTTPConfig HTTP Server 配置。
 type HTTPConfig struct {
-	Addr string
+	Addr string `json:"addr"`
 }
 
-// ProviderConfig Edge 所依赖的 Provider 地址。
-//
-// 注意：
-//
-// 当前 Provider 数量较少，显式列出地址。
-// 暂时不使用 map[string]string，避免过度抽象。
 type ProviderConfig struct {
-	DictAreaAddr string
-	HelloAddr    string
+	Address string `json:"address"`
 }
 
-// Load 加载配置。
-//
-// 当前阶段：
-// 环境变量 + 默认值。
-func Load() Config {
-	return Config{
-		HTTP: HTTPConfig{
-			Addr: env(
-				"GORO_EDGE_HTTP_ADDR",
-				":8080",
-			),
-		},
+// Load 从配置文件加载 Edge 配置。
+func Load(path string) (Config, error) {
 
-		Provider: ProviderConfig{
-			DictAreaAddr: env(
-				"GORO_EDGE_DICT_AREA_ADDR",
-				"192.168.1.114:50051",
-			),
-
-			HelloAddr: env(
-				"GORO_EDGE_HELLO_ADDR",
-				"127.0.0.1:9090",
-			),
-		},
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return Config{}, fmt.Errorf(
+			"read config file %s: %w",
+			path,
+			err,
+		)
 	}
+
+	var cfg Config
+
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		return Config{}, fmt.Errorf(
+			"decode config file %s: %w",
+			path,
+			err,
+		)
+	}
+
+	if err := cfg.Validate(); err != nil {
+		return Config{}, err
+	}
+
+	return cfg, nil
 }
 
-func env(key, fallback string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
+// Validate 校验配置。
+func (c Config) Validate() error {
+
+	if c.HTTP.Addr == "" {
+		return fmt.Errorf("http.addr is required")
 	}
 
-	return fallback
+	for name, provider := range c.Providers {
+		if name == "" {
+			return fmt.Errorf("provider name is required")
+		}
+
+		if provider.Address == "" {
+			return fmt.Errorf(
+				"provider %q address is required",
+				name,
+			)
+		}
+	}
+
+	return nil
 }

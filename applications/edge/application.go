@@ -6,29 +6,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/rocwg/goro-edge/applications/edge/aggregate/dashboard"
+	edgeclients "github.com/rocwg/goro-edge/applications/edge/clients"
+	"github.com/rocwg/goro-edge/applications/edge/direct/dictarea"
+	"github.com/rocwg/goro-edge/applications/edge/direct/hello"
 	edgeauth "github.com/rocwg/goro-edge/extensions/authentication"
 	edgeobservability "github.com/rocwg/goro-edge/extensions/observability"
 
 	edgeconfig "github.com/rocwg/goro-edge/runtime/config"
-
-	edgeclients "github.com/rocwg/goro-edge/applications/edge/clients"
-
-	"github.com/rocwg/goro-edge/applications/edge/aggregate/dashboard"
-	"github.com/rocwg/goro-edge/applications/edge/direct/dictarea"
-	"github.com/rocwg/goro-edge/applications/edge/direct/hello"
 )
 
-// Application 是 goro-edge 的 Composition Root。
-//
-// 它负责把：
-//
-//   - Runtime
-//   - Extensions
-//   - Provider Clients
-//   - Direct APIs
-//   - Aggregate APIs
-//
-// 组装成一个完整的 Edge Application。
 type Application struct {
 	cfg edgeconfig.Config
 
@@ -37,6 +24,16 @@ type Application struct {
 }
 
 // NewApplication 创建 Edge Application。
+//
+// Application 是整个 Edge 的 Composition Root：
+//
+//	配置
+//	  ↓
+//	Client Loader
+//	  ↓
+//	Provider Clients
+//	  ↓
+//	Direct / Aggregate
 func NewApplication(
 	cfg edgeconfig.Config,
 ) (*Application, error) {
@@ -51,30 +48,22 @@ func NewApplication(
 	// 2. Extensions
 	// ---------------------------------------------------------
 
-	router.Use(
-		edgeobservability.Middleware(),
-	)
-
-	router.Use(
-		edgeobservability.LoggingMiddleware(),
-	)
+	router.Use(edgeobservability.Middleware())
+	router.Use(edgeobservability.LoggingMiddleware())
 
 	authenticator := edgeauth.NewDemoAuthenticator()
-
-	router.Use(
-		edgeauth.Middleware(authenticator),
-	)
+	router.Use(edgeauth.Middleware(authenticator))
 
 	// ---------------------------------------------------------
 	// 3. Provider Clients
 	// ---------------------------------------------------------
 
-	providerClients, err := edgeclients.New(
-		cfg.Provider,
-	)
+	providerClients, err :=
+		edgeclients.NewLoader(cfg).Load()
+
 	if err != nil {
 		return nil, fmt.Errorf(
-			"initialize provider clients: %w",
+			"load provider clients: %w",
 			err,
 		)
 	}
@@ -89,22 +78,18 @@ func NewApplication(
 	// 4. Routes
 	// ---------------------------------------------------------
 
-	if err := app.registerRoutes(); err != nil {
-		providerClients.Close()
-
-		return nil, err
-	}
+	app.registerRoutes()
 
 	return app, nil
 }
 
-// registerRoutes 注册 Consumer API。
-func (a *Application) registerRoutes() error {
+// registerRoutes 注册 Edge 对外暴露的 Consumer API。
+func (a *Application) registerRoutes() {
 
 	api := a.router.Group("/api/v1")
 
 	// ---------------------------------------------------------
-	// Direct APIs
+	// Direct
 	// ---------------------------------------------------------
 
 	dictarea.Register(
@@ -118,15 +103,13 @@ func (a *Application) registerRoutes() error {
 	)
 
 	// ---------------------------------------------------------
-	// Aggregate APIs
+	// Aggregate
 	// ---------------------------------------------------------
 
 	dashboard.Register(
 		api,
 		a.clients,
 	)
-
-	return nil
 }
 
 // Run 启动 HTTP Server。
@@ -142,7 +125,7 @@ func (a *Application) Run() error {
 	)
 }
 
-// Close 释放 Application 资源。
+// Close 释放 Application 持有的资源。
 func (a *Application) Close() {
 
 	if a == nil {

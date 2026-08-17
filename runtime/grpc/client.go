@@ -12,12 +12,14 @@ import (
 // runtime/grpc 只负责 gRPC 连接能力。
 // 它不知道具体连接的是哪个 Provider。
 func NewClient(addr string) (*grpcgo.ClientConn, error) {
+
 	conn, err := grpcgo.NewClient(
 		addr,
 		grpcgo.WithTransportCredentials(
 			insecure.NewCredentials(),
 		),
 	)
+
 	if err != nil {
 		return nil, fmt.Errorf(
 			"connect grpc server %s: %w",
