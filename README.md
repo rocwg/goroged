@@ -40,5 +40,9 @@ Contains:
 - HTTP Adapter
 - Backend For Frontend (BFF)
 
-
+```powershell
+go work sync
+go test ...
+go run
+```
 
