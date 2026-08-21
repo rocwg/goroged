@@ -3,15 +3,19 @@ package clients
 import (
 	"fmt"
 
+	dictv1 "github.com/rocwg/grpc-contracts/gen/go/dictarea/v1"
+	hellov1 "github.com/rocwg/grpc-contracts/gen/go/hello/v1"
+
 	edgeconfig "github.com/rocwg/ged/examples/edge/config"
+	gedgrpc "github.com/rocwg/ged/grpc"
 )
 
 // Loader 负责在 Edge 启动阶段加载所有 Provider Client。
 //
 // Loader 只负责：
-//  1. 读取已经解析好的配置
-//  2. 创建 Provider Client
-//  3. 组装 Clients
+//   - 读取已经解析好的配置
+//   - 创建 Provider Client
+//   - 组装 Clients
 //
 // Loader 不负责：
 //   - HTTP Route
@@ -45,9 +49,9 @@ func (l *Loader) Load() (*Clients, error) {
 		)
 	}
 
-	dictAreaClient, closeDictArea, err :=
-		newDictArea(dictAreaConfig)
-
+	dictAreaConn, err := gedgrpc.NewClient(
+		dictAreaConfig.Address,
+	)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"load dict-area client: %w",
@@ -55,10 +59,15 @@ func (l *Loader) Load() (*Clients, error) {
 		)
 	}
 
-	result.DictArea = dictAreaClient
+	result.DictArea = dictv1.NewDictAreaServiceClient(
+		dictAreaConn,
+	)
+
 	result.closeFuncs = append(
 		result.closeFuncs,
-		closeDictArea,
+		func() {
+			gedgrpc.CloseClient(dictAreaConn)
+		},
 	)
 
 	// ---------------------------------------------------------
@@ -74,9 +83,9 @@ func (l *Loader) Load() (*Clients, error) {
 		)
 	}
 
-	helloClient, closeHello, err :=
-		newHello(helloConfig)
-
+	helloConn, err := gedgrpc.NewClient(
+		helloConfig.Address,
+	)
 	if err != nil {
 		result.Close()
 
@@ -86,10 +95,15 @@ func (l *Loader) Load() (*Clients, error) {
 		)
 	}
 
-	result.Hello = helloClient
+	result.Hello = hellov1.NewHelloServiceClient(
+		helloConn,
+	)
+
 	result.closeFuncs = append(
 		result.closeFuncs,
-		closeHello,
+		func() {
+			gedgrpc.CloseClient(helloConn)
+		},
 	)
 
 	return result, nil

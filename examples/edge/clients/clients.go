@@ -1,6 +1,8 @@
 package clients
 
 import (
+	"slices"
+
 	dictv1 "github.com/rocwg/grpc-contracts/gen/go/dictarea/v1"
 	hellov1 "github.com/rocwg/grpc-contracts/gen/go/hello/v1"
 )
@@ -24,8 +26,8 @@ func (c *Clients) Close() {
 	}
 
 	// 逆序关闭。
-	for i := len(c.closeFuncs) - 1; i >= 0; i-- {
-		c.closeFuncs[i]()
+	for _, v := range slices.Backward(c.closeFuncs) {
+		v()
 	}
 
 	c.closeFuncs = nil

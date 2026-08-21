@@ -36,10 +36,17 @@ func WriteJSON(
 	statusCode int,
 	value any,
 ) error {
+
+	data, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 
-	return json.NewEncoder(w).Encode(value)
+	_, err = w.Write(data)
+	return err
 }
 
 // gRPC                    HTTP

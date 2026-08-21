@@ -112,3 +112,33 @@ func TestWriteError_ResponseBody(t *testing.T) {
 		)
 	}
 }
+
+func TestWriteJSON_EncodeFailure(t *testing.T) {
+
+	recorder := httptest.NewRecorder()
+
+	err := gedhttp.WriteJSON(
+		recorder,
+		http.StatusOK,
+		func() {},
+	)
+
+	if err == nil {
+		t.Fatal("expected encode error")
+	}
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf(
+			"got status %d, want %d",
+			recorder.Code,
+			http.StatusOK,
+		)
+	}
+
+	if recorder.Body.Len() != 0 {
+		t.Fatalf(
+			"got body %q, want empty body",
+			recorder.Body.String(),
+		)
+	}
+}
