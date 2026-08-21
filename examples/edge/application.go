@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -17,38 +18,33 @@ import (
 
 type Application struct {
 	cfg     edgeconfig.Config
-	handler http.Handler
+	server  *http.Server
 	clients *edgeclients.Clients
 }
 
 // NewApplication 创建 Edge Application。
 //
-// Application 是整个 Edge 的 Composition Root：
-//
-//	配置
-//	  ↓
-//	Client Loader
-//	  ↓
-//	Provider Clients
-//	  ↓
-//	Direct / Aggregate
+// Application 是整个 Edge 的 Composition Root
 func NewApplication(
 	cfg edgeconfig.Config,
 ) (*Application, error) {
 
-	// 1. HTTP Router
-	mux := http.NewServeMux()
-
-	// 2. Provider Clients
-	providerClients, err := edgeclients.NewLoader(cfg).Load()
+	// 0. 创建 Client
+	clients, err := edgeclients.NewLoader(cfg).Load()
 	if err != nil {
-		return nil, fmt.Errorf("load provider clients: %w", err)
+		return nil, fmt.Errorf(
+			"load provider clients: %w",
+			err,
+		)
 	}
 
-	// 3. Routes
-	registerRoutes(mux, providerClients)
+	// 1. 创建 Router
+	mux := http.NewServeMux()
 
-	// 4. Middleware
+	// 2. 注册 Route
+	registerRoutes(mux, clients)
+
+	// 3. 组合 Middleware
 	authenticator := NewDemoAuthenticator()
 	var handler http.Handler = mux
 
@@ -56,10 +52,16 @@ func NewApplication(
 	handler = gedauth.Middleware(authenticator)(handler)
 	handler = gedrequest.Middleware()(handler)
 
+	// 4. 创建 Server
+	server := &http.Server{
+		Addr:    cfg.HTTP.Addr,
+		Handler: handler,
+	}
+
 	return &Application{
 		cfg:     cfg,
-		handler: handler,
-		clients: providerClients,
+		server:  server,
+		clients: clients,
 	}, nil
 }
 
@@ -76,6 +78,8 @@ func registerRoutes(
 }
 
 // Run 启动 HTTP Server。
+// ↓
+// 开始服务
 func (a *Application) Run() error {
 
 	log.Printf(
@@ -83,13 +87,28 @@ func (a *Application) Run() error {
 		a.cfg.HTTP.Addr,
 	)
 
-	return http.ListenAndServe(
-		a.cfg.HTTP.Addr,
-		a.handler,
-	)
+	return a.server.ListenAndServe()
+}
+
+// Shutdown
+// ↓
+// 停止 HTTP Server
+// ↓
+// 等待请求结束
+func (a *Application) Shutdown(
+	ctx context.Context,
+) error {
+
+	if a == nil || a.server == nil {
+		return nil
+	}
+
+	return a.server.Shutdown(ctx)
 }
 
 // Close 释放 Application 持有的资源。
+// ↓
+// 释放 Provider Clients
 func (a *Application) Close() {
 
 	if a == nil {
