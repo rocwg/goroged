@@ -2,10 +2,9 @@ package dashboard
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"time"
-
-	"github.com/gin-gonic/gin"
 
 	edgeclients "github.com/rocwg/ged/examples/edge/clients"
 )
@@ -23,7 +22,7 @@ func NewHandler(
 	}
 }
 
-// Overview
+// overview
 //
 // GET /api/v1/dashboard/overview
 //
@@ -33,22 +32,25 @@ func NewHandler(
 //	Hello Provider
 //
 // 然后聚合成 Consumer API Response。
-func (h *Handler) Overview(c *gin.Context) {
+func (h *Handler) overview(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
 
 	ctx, cancel := context.WithTimeout(
-		c.Request.Context(),
+		r.Context(),
 		3*time.Second,
 	)
 	defer cancel()
 
 	resp, err := h.service.overview(ctx)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "获取 Dashboard Overview 失败",
-		})
+		http.Error(w, "获取 Dashboard Overview 失败", http.StatusInternalServerError)
 		return
 	}
 
 	// Consumer Response
-	c.JSON(http.StatusOK, resp)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(resp)
 }

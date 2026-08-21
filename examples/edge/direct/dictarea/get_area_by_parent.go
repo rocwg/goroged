@@ -2,25 +2,21 @@ package dictarea
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"time"
-
-	"github.com/gin-gonic/gin"
 
 	dictv1 "github.com/rocwg/grpc-contracts/gen/go/dictarea/v1"
 )
 
-func (a *Adapter) getAreaByParent(c *gin.Context) {
-
+func (a *Adapter) getAreaByParent(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
 	// 1. Bind Request
 	var req GetAreaByParentRequest
 
-	if err := c.ShouldBindQuery(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "参数格式错误",
-		})
-		return
-	}
+	req.ParentCode = r.URL.Query().Get("parentCode")
 
 	if req.ParentCode == "" {
 		req.ParentCode = "0"
@@ -28,7 +24,7 @@ func (a *Adapter) getAreaByParent(c *gin.Context) {
 
 	// 2. context.WithTimeout()
 	ctx, cancel := context.WithTimeout(
-		c.Request.Context(),
+		r.Context(),
 		2*time.Second,
 	)
 	defer cancel()
@@ -44,12 +40,11 @@ func (a *Adapter) getAreaByParent(c *gin.Context) {
 
 	// 5. Return JSON
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// 无脑透传返回
-	c.JSON(http.StatusOK, resp)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(resp)
 }

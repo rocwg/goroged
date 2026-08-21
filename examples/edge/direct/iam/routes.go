@@ -1,15 +1,16 @@
 package iam
 
 import (
-	"github.com/gin-gonic/gin"
+	"net/http"
+
 	iamv1 "github.com/rocwg/grpc-contracts/gen/go/iam/v1"
 )
 
 func Register(
-	r *gin.RouterGroup,
+	mux *http.ServeMux,
 	client iamv1.AuthenticationServiceClient,
 ) {
 	adapter := NewAdapter(client)
 
-	r.POST("/login", adapter.Login)
+	mux.HandleFunc("POST /api/v1/iam/login", adapter.login)
 }

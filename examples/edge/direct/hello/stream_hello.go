@@ -2,15 +2,15 @@ package hello
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
-
-	"github.com/gin-gonic/gin"
 
 	hellov1 "github.com/rocwg/grpc-contracts/gen/go/hello/v1"
 )
 
-// StreamHello
+// streamHello
 //
 // HTTP(SSE)
 //
@@ -21,20 +21,17 @@ import (
 //	↓
 //
 // gRPC Server Streaming
-func (a *Adapter) StreamHello(c *gin.Context) {
-
+func (a *Adapter) streamHello(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
 	var req StreamHelloRequest
 
 	// 绑定 Query 参数，例如：?name=roc
-	if err := c.ShouldBindQuery(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "参数格式错误",
-		})
-		return
-	}
+	req.Name = r.URL.Query().Get("name")
 
 	ctx, cancel := context.WithTimeout(
-		c.Request.Context(),
+		r.Context(),
 		a.streamTimeout,
 	)
 	defer cancel()
@@ -46,28 +43,23 @@ func (a *Adapter) StreamHello(c *gin.Context) {
 		},
 	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// 告诉浏览器：这是一个 SSE 持续流
-	c.Header("Content-Type", "text/event-stream")
-	c.Header("Cache-Control", "no-cache")
+	// 告诉浏览器：这是一个 SSE 持续流。
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
 
-	// Gin 支持 SSE Flush
-	flusher, ok := c.Writer.(http.Flusher)
+	// SSE Flush
+	flusher, ok := w.(http.Flusher)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "stream unsupported",
-		})
+		http.Error(w, "stream unsupported", http.StatusInternalServerError)
 		return
 	}
 
 	// 持续接收 gRPC Stream
 	for {
-
 		resp, err := stream.Recv()
 
 		// 服务端正常结束
@@ -77,13 +69,39 @@ func (a *Adapter) StreamHello(c *gin.Context) {
 
 		// Stream 异常
 		if err != nil {
-			c.SSEvent("error", err.Error())
+			if writeErr := writeSSE(w, "error", err.Error()); writeErr != nil {
+				return
+			}
 			flusher.Flush()
 			return
 		}
 
 		// gRPC Stream -> HTTP SSE
-		c.SSEvent("message", resp)
+		if err := writeSSE(w, "message", resp); err != nil {
+			return
+		}
 		flusher.Flush()
 	}
+}
+
+func writeSSE(
+	w http.ResponseWriter,
+	event string,
+	data any,
+) error {
+
+	payload, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	_, err = fmt.Fprintf(
+		w,
+		"event: %s\n"+
+			"data: %s\n\n",
+		event,
+		payload,
+	)
+
+	return err
 }

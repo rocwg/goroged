@@ -1,10 +1,9 @@
 package authentication
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
-
-	"github.com/gin-gonic/gin"
 
 	gedidentity "github.com/rocwg/ged/identity"
 )
@@ -22,65 +21,58 @@ import (
 //	context.Context
 func Middleware(
 	authenticator Authenticator,
-) gin.HandlerFunc {
+) func(http.Handler) http.Handler {
 
-	return func(c *gin.Context) {
+	return func(next http.Handler) http.Handler {
 
-		authorization := c.GetHeader("Authorization")
-
-		if authorization == "" {
-			unauthorized(c, "missing authorization")
-			return
-		}
-
-		const prefix = "Bearer "
-
-		if !strings.HasPrefix(
-			authorization,
-			prefix,
+		return http.HandlerFunc(func(
+			w http.ResponseWriter,
+			r *http.Request,
 		) {
-			unauthorized(c, "invalid authorization scheme")
-			return
-		}
+			authorization := r.Header.Get("Authorization")
 
-		token := strings.TrimSpace(
-			strings.TrimPrefix(
-				authorization,
-				prefix,
-			),
-		)
+			if authorization == "" {
+				unauthorized(w, "missing authorization")
+				return
+			}
 
-		if token == "" {
-			unauthorized(c, "empty bearer token")
-			return
-		}
+			const prefix = "Bearer "
 
-		identity, err := authenticator.Authenticate(token)
-		if err != nil {
-			unauthorized(c, "invalid token")
-			return
-		}
+			if !strings.HasPrefix(authorization, prefix) {
+				unauthorized(w, "invalid authorization scheme")
+				return
+			}
 
-		ctx := gedidentity.WithContext(
-			c.Request.Context(),
-			identity,
-		)
+			token := strings.TrimSpace(
+				strings.TrimPrefix(authorization, prefix),
+			)
 
-		c.Request = c.Request.WithContext(ctx)
+			if token == "" {
+				unauthorized(w, "empty bearer token")
+				return
+			}
 
-		c.Next()
+			identity, err := authenticator.Authenticate(token)
+			if err != nil {
+				unauthorized(w, "invalid token")
+				return
+			}
+
+			ctx := gedidentity.WithContext(r.Context(), identity)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
 	}
 }
 
 func unauthorized(
-	c *gin.Context,
+	w http.ResponseWriter,
 	message string,
 ) {
-	c.AbortWithStatusJSON(
-		http.StatusUnauthorized,
-		gin.H{
-			"code":    "UNAUTHORIZED",
-			"message": message,
-		},
-	)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusUnauthorized)
+
+	_ = json.NewEncoder(w).Encode(map[string]string{
+		"code":    "UNAUTHORIZED",
+		"message": message,
+	})
 }

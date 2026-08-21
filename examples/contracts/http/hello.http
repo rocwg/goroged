@@ -1,0 +1,10 @@
+### ① 无 Token
+GET {{host}}/api/v1/hello/unary?name=roc
+Accept: application/json
+
+### ② Demo Token
+GET {{host}}/api/v1/hello/unary?name=roc
+Accept: application/json
+Authorization: Bearer demo-token
+
+###

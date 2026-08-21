@@ -1,9 +1,9 @@
 package hello
 
 type SayHelloRequest struct {
-	Name string `form:"name"`
+	Name string
 }
 
 type StreamHelloRequest struct {
-	Name string `form:"name"`
+	Name string
 }

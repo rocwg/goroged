@@ -148,6 +148,12 @@ router.Use(
 )
 ```
 
+```go
+mux := http.NewServeMux()
+
+mux.HandleFunc("GET /api/v1/...", handler)
+```
+
 Outgoing gRPC calls automatically receive the request and identity metadata through the gRPC client interceptor.
 
 ## Module

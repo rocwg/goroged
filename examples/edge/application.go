@@ -3,23 +3,21 @@ package main
 import (
 	"fmt"
 	"log"
-
-	"github.com/gin-gonic/gin"
+	"net/http"
 
 	gedauth "github.com/rocwg/ged/authentication"
+	edgeclients "github.com/rocwg/ged/examples/edge/clients"
+	edgeconfig "github.com/rocwg/ged/examples/edge/config"
 	gedrequest "github.com/rocwg/ged/request"
 
 	"github.com/rocwg/ged/examples/edge/aggregate/dashboard"
-	edgeclients "github.com/rocwg/ged/examples/edge/clients"
-	edgeconfig "github.com/rocwg/ged/examples/edge/config"
 	"github.com/rocwg/ged/examples/edge/direct/dictarea"
 	"github.com/rocwg/ged/examples/edge/direct/hello"
 )
 
 type Application struct {
-	cfg edgeconfig.Config
-
-	router  *gin.Engine
+	cfg     edgeconfig.Config
+	handler http.Handler
 	clients *edgeclients.Clients
 }
 
@@ -38,62 +36,43 @@ func NewApplication(
 	cfg edgeconfig.Config,
 ) (*Application, error) {
 
-	// ---------------------------------------------------------
 	// 1. HTTP Router
-	// ---------------------------------------------------------
+	mux := http.NewServeMux()
 
-	router := gin.Default()
-
-	// ---------------------------------------------------------
-	// 2. Extensions
-	// ---------------------------------------------------------
-
-	router.Use(gedrequest.Middleware())
-	router.Use(LoggingMiddleware())
-
-	authenticator := NewDemoAuthenticator()
-	router.Use(gedauth.Middleware(authenticator))
-
-	// ---------------------------------------------------------
-	// 3. Provider Clients
-	// ---------------------------------------------------------
-
-	providerClients, err :=
-		edgeclients.NewLoader(cfg).Load()
-
+	// 2. Provider Clients
+	providerClients, err := edgeclients.NewLoader(cfg).Load()
 	if err != nil {
-		return nil, fmt.Errorf(
-			"load provider clients: %w",
-			err,
-		)
+		return nil, fmt.Errorf("load provider clients: %w", err)
 	}
 
-	app := &Application{
+	// 3. Routes
+	registerRoutes(mux, providerClients)
+
+	// 4. Middleware
+	authenticator := NewDemoAuthenticator()
+	var handler http.Handler = mux
+
+	handler = LoggingMiddleware()(handler)
+	handler = gedauth.Middleware(authenticator)(handler)
+	handler = gedrequest.Middleware()(handler)
+
+	return &Application{
 		cfg:     cfg,
-		router:  router,
+		handler: handler,
 		clients: providerClients,
-	}
-
-	// ---------------------------------------------------------
-	// 4. Routes
-	// ---------------------------------------------------------
-
-	app.registerRoutes()
-
-	return app, nil
+	}, nil
 }
 
 // registerRoutes 注册 Edge 对外暴露的 Consumer API。
-func (a *Application) registerRoutes() {
-
-	api := a.router.Group("/api/v1")
-
+func registerRoutes(
+	mux *http.ServeMux,
+	clients *edgeclients.Clients,
+) {
 	// Direct
-	hello.Register(api.Group("/hello"), a.clients.Hello)
-	dictarea.Register(api.Group("/dictarea"), a.clients.DictArea)
-
+	hello.Register(mux, clients.Hello)
+	dictarea.Register(mux, clients.DictArea)
 	// Aggregate
-	dashboard.Register(api.Group("/dashboard"), a.clients)
+	dashboard.Register(mux, clients)
 }
 
 // Run 启动 HTTP Server。
@@ -104,8 +83,9 @@ func (a *Application) Run() error {
 		a.cfg.HTTP.Addr,
 	)
 
-	return a.router.Run(
+	return http.ListenAndServe(
 		a.cfg.HTTP.Addr,
+		a.handler,
 	)
 }
 

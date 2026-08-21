@@ -6,8 +6,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
-
 	"github.com/rocwg/ged/authentication"
 	"github.com/rocwg/ged/identity"
 )
@@ -34,41 +32,39 @@ func (a testAuthenticator) Authenticate(
 
 func TestMiddleware(t *testing.T) {
 
-	gin.SetMode(gin.TestMode)
-
-	router := gin.New()
-
-	router.Use(
-		authentication.Middleware(
-			testAuthenticator{
-				token: "demo-token",
-			},
-		),
-	)
-
-	router.GET(
-		"/test",
-		func(c *gin.Context) {
+	next := http.HandlerFunc(
+		func(
+			w http.ResponseWriter,
+			r *http.Request,
+		) {
 
 			identityContext, ok :=
 				identity.FromContext(
-					c.Request.Context(),
+					r.Context(),
 				)
 
 			if !ok {
-				c.JSON(
+				http.Error(
+					w,
+					"identity not found",
 					http.StatusInternalServerError,
-					nil,
 				)
 				return
 			}
 
-			c.JSON(
-				http.StatusOK,
-				identityContext,
+			w.WriteHeader(http.StatusOK)
+
+			_, _ = w.Write(
+				[]byte(identityContext.UserID),
 			)
 		},
 	)
+
+	handler := authentication.Middleware(
+		testAuthenticator{
+			token: "demo-token",
+		},
+	)(next)
 
 	req := httptest.NewRequest(
 		http.MethodGet,
@@ -83,7 +79,7 @@ func TestMiddleware(t *testing.T) {
 
 	recorder := httptest.NewRecorder()
 
-	router.ServeHTTP(
+	handler.ServeHTTP(
 		recorder,
 		req,
 	)
@@ -99,24 +95,20 @@ func TestMiddleware(t *testing.T) {
 
 func TestMiddleware_MissingAuthorization(t *testing.T) {
 
-	gin.SetMode(gin.TestMode)
-
-	router := gin.New()
-
-	router.Use(
-		authentication.Middleware(
-			testAuthenticator{
-				token: "demo-token",
-			},
-		),
-	)
-
-	router.GET(
-		"/test",
-		func(c *gin.Context) {
-			c.Status(http.StatusOK)
+	next := http.HandlerFunc(
+		func(
+			w http.ResponseWriter,
+			r *http.Request,
+		) {
+			w.WriteHeader(http.StatusOK)
 		},
 	)
+
+	handler := authentication.Middleware(
+		testAuthenticator{
+			token: "demo-token",
+		},
+	)(next)
 
 	req := httptest.NewRequest(
 		http.MethodGet,
@@ -126,7 +118,7 @@ func TestMiddleware_MissingAuthorization(t *testing.T) {
 
 	recorder := httptest.NewRecorder()
 
-	router.ServeHTTP(
+	handler.ServeHTTP(
 		recorder,
 		req,
 	)
@@ -142,24 +134,20 @@ func TestMiddleware_MissingAuthorization(t *testing.T) {
 
 func TestMiddleware_InvalidToken(t *testing.T) {
 
-	gin.SetMode(gin.TestMode)
-
-	router := gin.New()
-
-	router.Use(
-		authentication.Middleware(
-			testAuthenticator{
-				token: "demo-token",
-			},
-		),
-	)
-
-	router.GET(
-		"/test",
-		func(c *gin.Context) {
-			c.Status(http.StatusOK)
+	next := http.HandlerFunc(
+		func(
+			w http.ResponseWriter,
+			r *http.Request,
+		) {
+			w.WriteHeader(http.StatusOK)
 		},
 	)
+
+	handler := authentication.Middleware(
+		testAuthenticator{
+			token: "demo-token",
+		},
+	)(next)
 
 	req := httptest.NewRequest(
 		http.MethodGet,
@@ -174,7 +162,7 @@ func TestMiddleware_InvalidToken(t *testing.T) {
 
 	recorder := httptest.NewRecorder()
 
-	router.ServeHTTP(
+	handler.ServeHTTP(
 		recorder,
 		req,
 	)

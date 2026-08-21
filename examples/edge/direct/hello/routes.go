@@ -1,16 +1,17 @@
 package hello
 
 import (
-	"github.com/gin-gonic/gin"
+	"net/http"
+
 	hellov1 "github.com/rocwg/grpc-contracts/gen/go/hello/v1"
 )
 
 func Register(
-	r *gin.RouterGroup,
+	mux *http.ServeMux,
 	client hellov1.HelloServiceClient,
 ) {
 	adapter := NewAdapter(client)
 
-	r.GET("/unary", adapter.SayHello)
-	r.GET("/stream", adapter.StreamHello)
+	mux.HandleFunc("GET /api/v1/hello/unary", adapter.sayHello)
+	mux.HandleFunc("GET /api/v1/hello/stream", adapter.streamHello)
 }

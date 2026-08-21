@@ -1,17 +1,17 @@
 package dashboard
 
 import (
-	"github.com/gin-gonic/gin"
+	"net/http"
 
 	edgeclients "github.com/rocwg/ged/examples/edge/clients"
 )
 
 // Register 注册 Dashboard API。
 func Register(
-	router *gin.RouterGroup,
+	mux *http.ServeMux,
 	clients *edgeclients.Clients,
 ) {
 	handler := NewHandler(clients)
 
-	router.GET("/overview", handler.Overview)
+	mux.HandleFunc("GET /api/v1/dashboard/overview", handler.overview)
 }

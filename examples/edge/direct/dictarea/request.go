@@ -1,12 +1,12 @@
 package dictarea
 
 type GetAreaByParentRequest struct {
-	ParentCode string `form:"parent_code"`
+	ParentCode string
 }
 
 type SearchAreaRequest struct {
-	Keyword string `json:"keyword"`
-	Limit   int32  `json:"limit"`
+	Keyword string
+	Limit   int32
 }
 
 type BatchGetAreaByCodesRequest struct {

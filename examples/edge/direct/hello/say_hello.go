@@ -2,30 +2,26 @@ package hello
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
-
-	"github.com/gin-gonic/gin"
 
 	hellov1 "github.com/rocwg/grpc-contracts/gen/go/hello/v1"
 )
 
-func (a *Adapter) SayHello(c *gin.Context) {
-
+func (a *Adapter) sayHello(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
 	var req SayHelloRequest
 
-	if err := c.ShouldBindQuery(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "参数格式错误",
-		})
-		return
-	}
+	req.Name = r.URL.Query().Get("name")
 
 	if req.Name == "" {
 		req.Name = "World"
 	}
 
 	ctx, cancel := context.WithTimeout(
-		c.Request.Context(),
+		r.Context(),
 		a.unaryTimeout,
 	)
 	defer cancel()
@@ -38,11 +34,11 @@ func (a *Adapter) SayHello(c *gin.Context) {
 	)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	c.JSON(http.StatusOK, resp)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(resp)
 }

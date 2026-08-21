@@ -4,8 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"net/http"
-
-	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -24,37 +22,39 @@ const (
 //	request.Context
 //	   ↓
 //	context.Context
-func Middleware() gin.HandlerFunc {
+func Middleware() func(http.Handler) http.Handler {
 
-	return func(c *gin.Context) {
+	return func(next http.Handler) http.Handler {
 
-		requestID := c.GetHeader(HeaderRequestID)
-		if requestID == "" {
-			requestID = newID()
-		}
+		return http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
 
-		traceID := c.GetHeader(HeaderTraceID)
-		if traceID == "" {
-			traceID = newID()
-		}
+				requestID := r.Header.Get(HeaderRequestID)
+				if requestID == "" {
+					requestID = newID()
+				}
 
-		requestContext := Context{
-			RequestID: requestID,
-			TraceID:   traceID,
-		}
+				traceID := r.Header.Get(HeaderTraceID)
+				if traceID == "" {
+					traceID = newID()
+				}
 
-		ctx := WithContext(
-			c.Request.Context(),
-			requestContext,
-		)
+				requestContext := Context{
+					RequestID: requestID,
+					TraceID:   traceID,
+				}
 
-		c.Request = c.Request.WithContext(ctx)
+				ctx := WithContext(
+					r.Context(),
+					requestContext,
+				)
 
-		// 将最终使用的 ID 返回给 Consumer。
-		c.Header(HeaderRequestID, requestID)
-		c.Header(HeaderTraceID, traceID)
+				// 将最终使用的 ID 返回给 Consumer。
+				w.Header().Set(HeaderRequestID, requestID)
+				w.Header().Set(HeaderTraceID, traceID)
 
-		c.Next()
+				next.ServeHTTP(w, r.WithContext(ctx))
+			})
 	}
 }
 
@@ -73,12 +73,10 @@ func newID() string {
 
 // abortInternalServerError 是预留给后续 request middleware
 // 更复杂错误处理时使用的最小 HTTP 行为。
-func abortInternalServerError(c *gin.Context) {
-	c.AbortWithStatusJSON(
+func abortInternalServerError(w http.ResponseWriter) {
+	http.Error(
+		w,
+		"internal server error",
 		http.StatusInternalServerError,
-		gin.H{
-			"code":    "INTERNAL_SERVER_ERROR",
-			"message": "internal server error",
-		},
 	)
 }

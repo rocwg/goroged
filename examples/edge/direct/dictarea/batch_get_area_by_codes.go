@@ -2,27 +2,26 @@ package dictarea
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"time"
-
-	"github.com/gin-gonic/gin"
 
 	dictv1 "github.com/rocwg/grpc-contracts/gen/go/dictarea/v1"
 )
 
-func (a *Adapter) batchGetAreaByCodes(c *gin.Context) {
-
+func (a *Adapter) batchGetAreaByCodes(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
 	var req BatchGetAreaByCodesRequest
 
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "参数格式错误",
-		})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "参数格式错误", http.StatusBadRequest)
 		return
 	}
 
 	ctx, cancel := context.WithTimeout(
-		c.Request.Context(),
+		r.Context(),
 		2*time.Second,
 	)
 	defer cancel()
@@ -35,11 +34,11 @@ func (a *Adapter) batchGetAreaByCodes(c *gin.Context) {
 	)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	c.JSON(http.StatusOK, resp)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(resp)
 }
