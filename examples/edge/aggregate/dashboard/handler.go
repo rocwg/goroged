@@ -2,11 +2,11 @@ package dashboard
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"time"
 
 	edgeclients "github.com/rocwg/ged/examples/edge/clients"
+	gedhttp "github.com/rocwg/ged/http"
 )
 
 type Handler struct {
@@ -45,12 +45,10 @@ func (h *Handler) overview(
 
 	resp, err := h.service.overview(ctx)
 	if err != nil {
-		http.Error(w, "获取 Dashboard Overview 失败", http.StatusInternalServerError)
+		gedhttp.WriteError(w, err)
 		return
 	}
 
 	// Consumer Response
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(resp)
+	_ = gedhttp.WriteJSON(w, http.StatusOK, resp)
 }

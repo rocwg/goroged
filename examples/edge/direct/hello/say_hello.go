@@ -2,9 +2,9 @@ package hello
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 
+	gedhttp "github.com/rocwg/ged/http"
 	hellov1 "github.com/rocwg/grpc-contracts/gen/go/hello/v1"
 )
 
@@ -34,11 +34,8 @@ func (a *Adapter) sayHello(
 	)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		gedhttp.WriteError(w, err)
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(resp)
+	_ = gedhttp.WriteJSON(w, http.StatusOK, resp)
 }
